@@ -1,0 +1,12 @@
+安装步骤
+1、安装Django运行环境
+需要修改
+1、Config.py里面
+SVN_URL = 'xxxxxx'  		#填写仓库URL.即你的快照文件的URL
+svnusername = "avatar"      #定义一个SVN用户
+svnpassword = "avatar"      #定义一个SVN密码
+2、setting.py里面
+修改数据库连接及memcached配置地址
+
+
+3、启动应用程序就可以正常登录

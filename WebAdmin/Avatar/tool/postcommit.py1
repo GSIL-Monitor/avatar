@@ -1,0 +1,176 @@
+#!/usr/bin/env python
+#-*-coding:utf-8-*-
+"""
+post-commit程序，实现对SVN的增、删、改的数据库同步
+@author: yaofang.zjl@taobao.com
+"""
+import sys,os
+import MySQLdb
+import logging
+from time import strftime, localtime
+from optparse import OptionParser
+"""
+try:
+    error
+except Exception,e:
+    logapp = Pubclilog()
+    logger,hdlr = logapp.initLog()
+    logger.info(str(e))
+    hdlr.flush()
+    logger.removeHandler(hdlr)
+    return
+
+"""
+class Pubclilog():
+    def __init__(self):
+        self.logfile = '/tmp/avatar_post_commit.txt'
+    def initLog(self):
+        logger = logging.getLogger()
+        filehandler = logging.FileHandler(self.logfile)
+        streamhandler = logging.StreamHandler()  
+        fmt = logging.Formatter('%(asctime)s, %(funcName)s, %(message)s') 
+        logger.setLevel(logging.DEBUG)   
+        logger.addHandler(filehandler)   
+        logger.addHandler(streamhandler)  
+        return [logger,filehandler]  
+
+"""
+程序处理主体
+"""
+class BaseSvn:
+    def __init__(self,log_switch,svnpath,svnrevision):
+        self.conn = MySQLdb.connect(db='avatar',host='10.13.114.23', user='admin',passwd='123456',charset='utf8') 
+        self.svnbin = "/usr/local/svn/bin"
+        self.log_switch=log_switch  
+        self.svnpath = svnpath
+        self.svnrevision = svnrevision
+    
+    """
+    作用：调用svnlook获取作者与时间
+    2011-06-06 00:56:28 +0800 (Mon, 06 Jun 2011)
+    @return: ['作者','时间']
+    """
+    def _svninfo(self):
+        cmd = '%s/svnlook author %s -r %s'% (self.svnbin, self.svnpath, self.svnrevision)
+        return [os.popen(cmd, 'r').readlines()[0].replace('\n',''),strftime("%Y-%m-%d %H:%M:%S",localtime())]
+    
+    """
+    作用：解析changed变更记录获取变更列表依据不同的类型进行相应的DB操作
+    """
+    def _svnpostdb(self):
+        logapp = Pubclilog()
+        logger,hdlr = logapp.initLog()
+        self.cursor = self.conn.cursor()  
+        try:
+            author_time = self._svninfo()
+            cmd = '%s/svnlook changed %s -r %s'% (self.svnbin, self.svnpath, self.svnrevision)
+            content = os.popen(cmd).readlines()
+            for line in content:
+                svntype = line[0:1]
+                svncont = line.split('  ')[-1]
+                if svncont.count('/') == 1:
+                    filename = svncont.split('/')[-1].strip()
+                    filemenu = svncont.split('/')[0].strip()
+                    if filename == "":
+                        logger.info(line)  
+                    else:
+                        firstle = filename[0]
+                        logger.info("++++++++++Staring...+++++++++++")
+                        if firstle.lower() == filemenu.lower():
+                            logger.info(svntype)
+                            if svntype == 'A':
+                                sql = "insert into `snapshot` (filename,filetype,author,lastpl,lastmt) values('%s','%s','%s','%s','%s')" % (filename,firstle,author_time[0],author_time[0],author_time[1])
+                                logger.info(sql)
+                                logger.info("============Add end=================")
+                                self.cursor.execute(sql)  
+                                self.conn.commit()  
+                            elif svntype == 'D':
+                                logger.info("===============Delete file===================")
+                                """1. 依据名称提取其快照表的ID"""
+                                self.cursor.execute("select fileid from `snapshot` where filename='%s' and filetype='%s'"%(filename,firstle))
+                                tmp = self.cursor.fetchall()
+                                fileid = tmp[0][0]
+                                logger.info(fileid)
+                                """2. 依据ID将关联表的记录删除掉"""
+                                self.cursor.execute("delete from concern where fileid='%d'"%int(fileid))
+                                self.cursor.execute("delete from snaprecord where fileid='%d'"%int(fileid))
+                                self.cursor.execute("delete from snapreletd where filename='%s' limit 1"%filename)
+                                self.cursor.execute("delete from snapscore where `fileid` ='%d'"%int(fileid))
+                                self.cursor.execute("delete from snapserver where `fileid` ='%d'"%int(fileid))
+                                self.cursor.execute("delete from snapshot where `fileid` ='%d' limit 1"%int(fileid))
+                                self.conn.commit()  
+                                logger.info("===============Delete file End===================")
+                            elif svntype == 'U':
+                                logger.info("===============Update file===================")
+                                """表示更新 只需要更新当前快照文件的最后修改人与时间还有修订次数"""
+                                self.cursor.execute("select fileid from `snapshot` where filename='%s' and filetype='%s'"%(filename,firstle))
+                                tmp = self.cursor.fetchall()
+                                fileid = tmp[0][0]
+                                logger.info(fileid)
+                                sql = "update snapshot set lastpl='%s',lastmt='%s',`modifynum` =`modifynum`  + 1 where fileid='%d'"%(author_time[0],author_time[1],int(fileid))
+                                logger.info(sql)
+                                self.cursor.execute(sql)
+                                self.conn.commit()  
+                                logger.info("===============Update file End===================")
+                else:
+                    pass
+            hdlr.flush()
+            logger.removeHandler(hdlr)
+        except Exception,e:
+            if self.log_switch=="on":  
+                logapp = Pubclilog()
+                logger,hdlr = logapp.initLog()
+                logger.info(str(e))
+                hdlr.flush()
+                logger.removeHandler(hdlr)
+                return
+            
+    def __del__(self):  
+        try:  
+            self.cursor.close()  
+            self.conn.close()  
+        except Exception,e:  
+            pass  
+
+"""
+应用启动
+@param svnpath: 代码库目录
+@param svnrevision:最新版本号
+@param logswitch:  日志开关
+@return :None  
+"""
+def startpost(**args):
+    app=BaseSvn(args.get('logswitch'),args.get('svnpath'),args.get('svnrevision'))  
+    app._svnpostdb()  
+    app=None  
+    return None
+
+
+if __name__ == '__main__':
+    """
+    python postcommit.py  -p /opt/svn/data -r 10
+    print opts.log_switch
+    print opts.path
+    print opts.revision
+    if opts.verbose:
+        print "SVN COMMIT-POST V1.0 Beta."
+        sys.exit()
+    """
+    MSG_USAGE = "postcommit.py [-p][-r] -l [on|off] [-v]"
+    parser = OptionParser(MSG_USAGE)
+    parser.add_option("-l","--log",action="store",dest="log_switch",type="string",default="on")
+    parser.add_option("-p","--path", action="store", dest="path",help="SVN版本目录".decode('utf-8'))
+    parser.add_option("-r","--revision", action="store", dest="revision",help="SVN版本库号".decode('utf-8'))
+    parser.add_option("-v","--version", action="store_true", dest="verbose", help="versionlook".decode('utf-8'))  
+    opts, args = parser.parse_args()  
+    
+    if opts.verbose:  
+        print "Post-commit V1.0 beta."  
+        sys.exit(0)
+    
+    if opts.log_switch=="on":  
+        log_switch="on"  
+    else:  
+        log_switch="off" 
+    startpost(svnpath=opts.path,svnrevision=opts.revision,logswitch=log_switch)  
+    sys.exit(0)

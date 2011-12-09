@@ -1,0 +1,693 @@
+{% extends "index_base.html" %}
+{% block content %}
+{%load enconvertch %}
+<style>
+    .search input{
+    width:100%;
+	color:gray;
+    
+	}
+	.package-content-left {
+		
+	}
+	.package-content-left .hd {
+		width:100%;
+	}
+	.package-content-left .search_locate {
+		margin:5px 0;padding:0px;text-align:left;width:100%;height:200px;border:none;
+		width:100px;width:100%;
+		padding-left:10px;border:1px dotted gray;
+		
+	}
+	.package-content-right {
+		margin-top:20px;
+	}
+	.package-content-right .hd {
+		width:100%;
+	}
+	.package-content-right .search_locate {
+		margin:5px 0;padding:0px;text-align:left;width:100%;height:200px;border:none;
+		width:100px;width:100%;
+		padding-left:10px;border:1px dotted gray;
+		
+	}
+</style>
+<style type="text/css">
+.yui3-accordion {
+    height: 100%;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+.yui3-accordion-item {
+    border:2px,solid,yellow;
+    cursor: pointer;
+    position: relative;
+    width: 100%;
+}
+.yui3-accordion-item .yui3-widget-hd {
+    overflow: hidden;
+	text-decoration:none;
+}
+.yui3-accordion-item .yui3-widget-bd {
+    cursor: default;
+    overflow: hidden;
+    position: relative;
+	background-color:#c1c2bc;
+	border:1px solid #ccc;
+}
+.yui3-accordion-item-icons {
+    float: right;
+    height: 25px;
+    overflow: hidden;
+    padding: 1px;
+    position: relative;
+}
+.yui3-accordion-item-icon{
+  margin-top:5px;
+  float:left;
+  text-decoration:none;
+  color:black;
+  font-weight:bold;
+    
+}
+
+.yui3-accordion-item-icon, .yui3-accordion-item-label {
+    margin-left:10px;
+    float: left;
+}
+.yui3-accordion-item-label {
+    position: relative;
+    top: 4px;
+}
+.yui3-accordion-item-iconexpanded, .yui3-accordion-item-iconalwaysvisible, .yui3-accordion-item-iconclose {
+    float: left;
+}
+.yui3-accordion-item-iconclose-hidden {
+    display: none;
+}
+.yui3-skin-sam .yui3-accordion {
+    border: 1px solid #93B2CC;
+}
+ .yui3-accordion-item .yui3-widget-hd {
+    background-color: #e0e0d8;
+    background-position: 0 0;
+    border: 1px dotted #666;
+    height: 25px;
+}
+.yui3-accordion-item-icon {
+    background-repeat: no-repeat;
+}
+
+.yui3-accordion-item-label {
+    color: #444444;
+}
+
+.yui3-accordion-item-label:hover {
+    text-decoration: none;
+}
+
+.yui3-skin-sam .yui3-accordion-proxyel-visible {
+    background-color: red;
+    border-color: blue;
+    color: white;
+    font-weight: bold;
+    opacity: 0.7;
+}
+         
+
+	p {
+		line-height: 1.6em;
+	}
+
+
+   .yui3-widget-hd  a:link{
+		color: #000000;
+		text-decoration:none;
+	}
+	.yui3-widget-hd  a:active{
+		color: #000000;
+		text-decoration:underline;
+	}
+	 .yui3-widget-hd  a:visited {
+		color: #000000;
+		text-decoration:underline;
+	}
+
+   .yui3-widget-hd  a:hover {
+		color: #000000;
+		text-decoration:underline;
+	}
+   
+	.acc_container {
+		top: 3px;
+		float:right; 
+		position: relative; 
+		height: 660px;
+		width:200px;
+	}
+    .yui3-widget-bd  li{
+	margin-left:8px;
+	text-align:left;
+	list-style:none;
+	
+	}</style>
+<script src="/site_media/js/yui-min.js"></script>
+<script type="text/javascript">
+<!--
+/**
+ * 用户获取关注与取消关注的AJAX提交事件 
+ */
+function doconcer(type) {
+	//如果type==off 表示现在还没有关注要申请关注
+	var usertableid = $("#myfileid").val();		//快照文件的ID
+	$.ajax({
+		type:"GET",
+		url: "/avatar/concern/"+usertableid+"/"+type+"/",								
+		success:function(msg){
+			if(msg == 1) {
+				$("#myconcerid").html("<font color='black'><a href='#' onclick=\"doconcer('off');\" style=\"text-decoration:none\">点击关注</a></font><img src=\"/site_media/images/on.gif\" width=\"16\" height=\"16\" align=\"absmiddle\">");
+			}else{
+				$("#myconcerid").html("<font color='red'><a href='#' onclick=\"doconcer('on')\"  style=\"text-decoration:none\">你已关注</a></font><img src=\"/site_media/images/off.gif\" width=\"16\" height=\"16\" align=\"absmiddle\">");
+			}
+		}			
+	})	
+}
+//-->
+</script>
+<script>
+/**
+ * 用户加锁与解锁操作
+ */
+function ajaxlock(){
+	//用户加锁
+	var myfilename = $("#myfilename").val();
+	var myfileid = $("#myfileid").val();
+	$.ajax({
+		type:"GET",
+		url: "/avatar/snaplock/lock/"+myfileid+"/?filename="+myfilename,								
+		success:function(msg){
+			if(msg == "1") {
+				alert("成功上锁，别人不可以编辑此快照");
+				$("#actionstatus").html("<button class=\"white\" onclick=\"ajaxunlock();\">解锁</button><button class=\"white\">提交</button><button class=\"white\">衍生</button>");
+			}else{
+				alert("加锁失败");
+				return;
+			}
+		}			
+	})	
+} 
+
+function ajaxunlock(){
+	//用户加锁
+	var myfilename = $("#myfilename").val();
+	var myfileid = $("#myfileid").val();
+	$.ajax({
+		type:"GET",
+		url: "/avatar/snaplock/unlock/"+myfileid+"/?filename="+myfilename,								
+		success:function(msg){
+			if(msg == "1") {
+				alert("成功解锁，别人可以编辑此快照");
+				$("#actionstatus").html("<button class=\"white\" onclick=\"ajaxlock();\">加锁</button><button class=\"white\">提交</button><button class=\"white\">衍生</button>");
+			}else{
+				alert("解锁失败");
+				return;
+			}
+		}			
+	})	
+} 
+</script>
+
+
+<script type="text/javascript">
+/* AJAX Star Rating : v1.0.3 : 2008/05/06 */
+/* http://www.nofunc.com/AJAX_Star_Rating/ */
+function $Z(v,o) { return((typeof(o)=='object'?o:document).getElementById(v)); }
+function $S(o) { return((typeof(o)=='object'?o:$Z(o)).style); }
+function agent(v) { return(Math.max(navigator.userAgent.toLowerCase().indexOf(v),0)); }
+function abPos(o) { var o=(typeof(o)=='object'?o:$Z(o)), z={X:0,Y:0}; while(o!=null) { z.X+=o.offsetLeft; z.Y+=o.offsetTop; o=o.offsetParent; }; return(z); }
+function XY(e,v) { var o=agent('msie')?{'X':event.clientX+document.body.scrollLeft,'Y':event.clientY+document.body.scrollTop}:{'X':e.pageX,'Y':e.pageY}; return(v?o[v]:o); }
+star={};
+star.mouse=function(e,o) { if(star.stop || isNaN(star.stop)) { star.stop=0;
+	document.onmousemove=function(e) { var n=star.num;
+		var p=abPos($Z('star'+n)), x=XY(e), oX=x.X-p.X, oY=x.Y-p.Y; star.num=o.id.substr(4);
+		if(oX<1 || oX>84 || oY<0 || oY>19) { star.stop=1; star.revert(); }
+		else {
+			$S('starCur'+n).width=oX+'px';
+			$S('starUser'+n).color='#111';
+			$Z('starUser'+n).innerHTML=Math.round(oX/84*100)+'%';
+		}
+	};
+} };
+star.update=function(e,o) { 
+	var usertableid = $("#myfileid").val();		//快照文件的ID
+	var n=star.num, v=parseInt($Z('starUser'+n).innerHTML);
+	n=o.id.substr(4); 
+	$Z('starCur'+n).title=v;
+
+	if ($("#checktype").val() == "1") {
+		alert("你已评过分了,不要刷分");
+		return;
+	}
+	$.post(
+		"/avatar/score/"+usertableid+"/", 
+		{ vote:v},
+		function(msg){
+			if(msg == 1) {
+				alert("你的评分为:"+(v) + "分!感谢支持");
+				$("#checktype").val("1");
+			}else{
+				alert("系统提交失败！");
+			}
+		}
+	);
+		
+};
+star.revert=function() { var n=star.num, v=parseInt($Z('starCur'+n).title);
+	$S('starCur'+n).width=Math.round(v*84/100)+'px';
+
+	$Z('starUser'+n).innerHTML=(v>0?Math.round(v)+'%':'');
+
+	$Z('starUser'+n).style.color='#888';
+	document.onmousemove='';
+};
+star.num=0;
+</script>
+
+
+
+
+
+
+
+<div class="content">
+  <div class="edit-avatar">
+    <table border="0" align="center" cellpadding="2" cellspacing="2" class="main_table">
+      <tr>
+        <th colspan="3" scope="col">
+        快照名称:<input type="text" id="myfilename" value="{{file_name}}">
+        <input type="hidden" id="myfileid" value="{{file_id}}">
+          </th>
+        </tr>
+      <tr>
+        <td colspan="2">
+        <button class="opsfree_link" onclick="location.href='/avatar/hostslot/{{file_id}}/?filename={{file_name}}'">
+        <img src="/site_media/images/computer_link.png" alt="OpsFree" width="80" height="32" align="absmiddle">关联设定(已关联{% if oneservernum %} {{oneservernum}} {% else %} 0 {%endif%} )</button></td>
+        <td> 
+        
+         评价<div id="star">
+<ul id="star0" class="star" onMouseDown="star.update(event,this)" onMouseMove="star.mouse(event,this)" title="Rate This!">
+  <li id="starCur0" class="curr" title="98" style="width: 82px;"></li>
+ </ul></div>
+ <div style="color: rgb(136, 136, 136);" id="starUser0" class="user">98%</div>
+<input type="hidden" id="checktype" value="0">
+      </td>
+      </tr>
+      <tr>
+        <td colspan="2">参与维护人：  
+        {% for objlog in svnlog %}
+				{{objlog.author|enconvertch}}&nbsp;&nbsp;
+			{% endfor %}
+        </td>
+        <td>
+        <span id="myconcerid">
+		  {% ifequal flag "off" %}<font color='black'><a onclick="doconcer('off');" style="text-decoration:none">点击关注</a></font>
+		  <img src="/site_media/images/on.gif"  width="16" height="16" align="absmiddle">
+		  {% endifequal %} 
+    	  {% ifequal flag "ok" %}<font color='red'><a onclick="doconcer('on');" style="text-decoration:none">你已关注</a></font>
+    	  <img src="/site_media/images/off.gif" width="16" height="16" align="absmiddle">
+    	  {% endifequal %} 
+    	</span>
+        
+        </td>
+      </tr>
+      <tr>
+        <td colspan="3">编辑快照软件包</td>
+        </tr>
+      <tr>
+        <td>
+        
+   			<div class="package-content-left">
+			<div class="hd"> 
+				操作系统软件包 Base RPMS ({{mysnapfilecontent.base_rpms_num}})
+			</div>
+			<div class="bd">
+			     <div class="search">
+				<input type="text" id="J_mytext" value="搜索定位"/>
+				</div>
+				<select id="fb_list" multiple="multiple" class="search_locate">
+				{% for ele in mysnapfilecontent.base_rpms%}
+				<option value="{{ele}}">{{ele}}</option>
+				{%endfor%}
+				</select>
+			</div>
+			<div class="ft"> 
+			</div>
+		</div>     
+        </td>
+        <td  width="10%" align="center" > 
+　　　　	<input type="button" id="add" value="添加>>"/>
+　　　　　　<div>
+　　　　　　	<input type="button" id="delete" value="<<删除"/>
+            </div>
+　　　　</td>
+		
+		<td width="45%" height="100px"><div class="package-content-right">
+			<div class="hd"> 
+				 自定义应用软件包 Cust RPMS
+			</div>
+			<div class="bd">
+			      <div class="search">
+				<input type="text" id="J_othertext" value="搜索定位"/>
+				</div>
+				<select id="select_list" multiple="multiple" class="search_locate">
+				{% for ele in mysnapfilecontent.cust_rpms%}
+				<option value="{{ele}}">{{ele}}</option>
+				{%endfor%}
+   　　　			</select>
+			</div>
+			<div class="ft"> 
+			</div>
+		</div>
+　　　　</td>
+      </tr>
+      <tr>
+      
+      
+        <td colspan="3"><label>软件包内配置文件
+            <select name="diff_files" id="diff_files">
+            {% for objlog in mysnapfilecontent.diff_file %}
+				<option value="ab{{forloop.counter}}">{{objlog}}</ul>
+			{% endfor %}
+            </select>
+        </label><button id="J_del_option">删除该项</button></td>
+      </tr>
+      <tr>
+        <td colspan="3">
+        {% for key in mysnapfilecontent.diff_content.items %}
+        <textarea name="diff_content" id="ab{{key.0}}" cols="65" rows="15" value="{{key.1}}">{{key.1}}</textarea>
+        {% endfor %}
+        </td>
+        </tr>
+       <tr>
+        <td colspan="3" style="text-algin:center">
+        {% ifequal isauthor "1" %}
+        	 {% ifequal lock "no" %}
+        	 	<span id="actionstatus">
+        	 		<button class="white" onclick="ajaxlock();">加锁</button>
+        	 		<button class="white">提交</button>
+        	 		<button class="white">衍生</button>
+        	 	</span>
+             {%else%}
+          		<span id="actionstatus">
+        	 		<button class="white" onclick="ajaxunlock();">解锁</button>
+        	 		<button class="white">提交</button>
+        	 		<button class="white">衍生</button>
+        	 	</span>
+           {% endifequal %} 
+        {% else %}
+        	{% ifequal lock "no" %}
+        	 	<span id="actionstatus">
+        	 		<button class="white">提交</button>
+        	 		<button class="white">衍生</button>
+        	 	</span>
+             {%else%}
+          		<span id="actionstatus">
+        	 		锁定状态
+        	 		<button class="white">衍生</button>
+        	 	</span>
+        {% endifequal %}
+        {% endifequal %} 
+          </td>
+        </tr>
+    </table>
+
+  </div>
+  
+  <div class="avatar-log">
+	<ul class="accordion" id="vertical">
+		<li class="accordion">
+			<div>
+			<span class="log-header">修订记录</span>
+			<img src="/site_media/images/doc_edit.png" alt="edit" width="16" height="16" align="absmiddle">
+			{% for objlog in svnlog %}
+				<ul>{{objlog.author|enconvertch}}&nbsp;{{objlog.date}}&nbsp;r{{objlog.revision}}</ul>
+			{% endfor %}
+	</div>
+	</li>
+	<li class="slide-02">
+<div>
+			<span class="log-header">调用记录</span><img src="/site_media/images/sign-out.png" alt="sign-out" width="16" height="16" align="absmiddle">
+<ul> bbbb</ul>
+		</div>
+	</li>
+		<li class="slide-03">
+			<div>
+			  <span class="log-header">评价记录</span><img src="/site_media/images/spechbubble_2.png" alt="comment" width="16" height="16" align="absmiddle">
+{%  for obj in scorelist  %}
+<ul>{{obj.times}}&nbsp;
+{% if obj.a %}
+{{obj.a}}
+{%else%}
+--
+{%endif%}
+&nbsp;{{obj.score}}分</ul>
+{% endfor %}
+		  </div>
+		</li>
+		<li class="slide-04">
+		<div>
+			<span class="log-header">访问记录</span><img src="/site_media/images/eye_inv.png" alt="views" width="16" height="16" align="absmiddle">
+{%  for obj in visitlist  %}
+<ul>{{obj.times}}&nbsp;{% if obj.a %}
+{{obj.a}}
+{%else%}
+--
+{%endif%}</ul>
+{% endfor %}
+		  </div>
+		</li>
+		<li class="slide-05">
+			<div>
+			  <span class="log-header">关注用户</span><img src="/site_media/images/user_silhouette.png" alt="users" width="16" height="16" align="absmiddle">
+{%  for obj in concerlist  %}
+<ul>{% if obj.a %}
+{{obj.a}}
+{%else%}
+--
+{%endif%}</ul>
+{% endfor %}
+		  </div>
+		</li>
+	</ul>
+  </div>
+  
+  
+<script>
+var config = {
+	combine:true,
+	comboBase:'http://a.tbcdn.cn/??',
+	root:'s/yui/3.3.0/build/',
+	filter:{
+		'searchExp': "&", 
+		'replaceStr': ","
+	},
+	//项目用到的基础控件，这些控件（包括皮肤）是直接使用的，做好模块的引用关系即可,比如弹层组件+样式，日历组件+样式
+	//如果组件样式不采用默认样式，需要自己定义，需要属于“项目独有的控件样式”，也可以作为项目的全局模块放进来,尽管在其他项目中并无共用这个皮肤，比如floatip.css
+	modules:{
+		jquery:{
+			path:'jquery-1.4.4.min.js',
+			root:'app/dp/avatar/js/',
+			combine:true			
+		},
+		'jquery-ui':{
+			path:'jquery-ui-1.8.10.custom.min.js',
+			root:'app/dp/avatar/js/',
+			combine:true,
+			requires:['jquery']
+		}
+		
+	}
+};
+//添加新的模块
+var addModule = function(o){
+	YUI().mix(config.modules,o);
+	return config;
+};
+</script>
+
+
+<script>
+/**
+ * 搜索框的交互
+ */
+YUI(addModule({
+	'tip-input':{
+		fullpath:'http://a.tbcdn.cn/app/dp/s/tip-input/tipinput.js',
+		requires:['node']
+	}
+})).use('tip-input',function(Y){
+
+	var mytext = new Y.tipInput('J_mytext');
+	var othertext = new Y.tipInput('J_othertext');
+
+	var renderSelect = function(sel,str,key){
+		if(str == '' || str == key){
+			sel.all('option').each(function(node){
+				node.setStyle('display','');
+			});
+			return;
+		}
+		var reg = new RegExp(str,'i');
+		sel.all('option').each(function(node){
+			
+			var showwing = reg.test(node.get('value'))?'':'none';
+			node.setStyle('display',showwing);
+		
+		});
+
+	};
+
+	Y.all('.search input').on('keyup',function(e){
+		
+		var select = e.target.ancestor('.bd').one('select');
+		renderSelect(select,e.target.get('value'),mytext.defaultvalue);
+	
+	});
+});
+
+/**
+　*动态的给左边的下拉列表创建选项
+　*具体情况可以从数据库读取数据动态创建选项
+　*/
+YUI(config).use('jquery-ui','node',function(Y){
+	// 改成YUI3的版本
+	Y.one('#J_option_continer').delegate('dblclick',function(e){
+
+		var value = e.target.get('value');
+		var newvalue=prompt("请输入要修改的选项的内容",value);//将输入的内容赋给变量 name ，
+		if(newvalue!=null){
+			e.target.replace(Y.Node.create('<option value="'+newvalue+'">'+newvalue+'</option>'));
+			//renderPackage(e.target,newvalue);
+		}
+	
+	},'option');
+  
+  $(function(){ 
+	$("#add").click(function(){ 
+		if($("#fb_list option:selected").length>0){  
+			$("#fb_list option:selected").each(function(){ 
+						$("#select_list").append("<option value='"+$(this).val()+"'>"+$(this).text()+"</option>");
+			$(this).remove();  
+		})}else{ 		
+		alert("请选择要添加的分包！"); 
+		} 
+       }) 
+	});
+	$(function(){ 
+		$("#delete").click(function(){ 
+			if($("#select_list option:selected").length>0){  
+			$("#select_list option:selected").each(function(){ 
+						$("#fb_list").append("<option value='"+$(this).val()+"'>"+$(this).text()+"</option>");
+						$(this).remove();  
+		})}else{ 		
+		alert("请选择要删除的分包！"); 
+		} 
+       }) 
+		
+
+	});
+})
+
+</script>
+
+<script type="text/javascript">
+
+YUI(addModule({
+	'accordion':{
+		path:'accordion.js',
+		root:'app/dp/avatar/js/',
+		combine:true,
+		requires:['node']
+	}
+})).use('accordion');
+
+</script>
+  <script>
+
+//软件包select控件和textarea的联动的交互
+YUI(config).use('node',function(Y){
+
+	var renderSelectTextarea = function(){
+		Y.all('textarea').each(function(node){
+			node.setStyle('display','none');
+		});
+		var value = Y.one('#diff_files').get('value');
+		Y.one('#'+value).setStyle('display','');
+		
+	};
+
+
+    Y.one('#J_del_option').on('click',function(e){
+        if(confirm('是否要删除这个选项？')){
+            var s = Y.one('#diff_files');
+			var value = s.get('value');
+			//debugger;
+			s.all('option').each(function(node){
+				if(node.get('value') == value){
+					node.remove();
+					Y.one('#'+value).remove();
+					renderSelectTextarea();
+				}
+			});
+        }
+    });
+	
+	Y.one('#diff_files').on('change',renderSelectTextarea);
+
+	Y.on('domready',function(){
+		renderSelectTextarea();
+	});
+});
+YUI(config).use('jquery-ui',function(Y){
+    function get(v,o){
+        return((typeof(o)=='object'?o:document).getElementById(v));} 
+    function getS(o) { 
+        return((typeof(o)=='object'?o:get(o)).style);
+    }
+    function agent(v){  
+    return(Math.max(navigator.userAgent.toLowerCase().indexOf(v),0)); }
+    function abPos(o) {
+    var o=(typeof(o)=='object'?o:get(o)), z={X:0,Y:0}; 
+    while(o!=null) { z.X+=o.offsetLeft; z.Y+=o.offsetTop; o=o.offsetParent; }; return(z); }
+    function XY(e,v) { var o=agent('msie')?{'X':event.clientX+document.body.scrollLeft,'Y':event.clientY+document.body.scrollTop}:{'X':e.pageX,'Y':e.pageY}; return(v?o[v]:o); }
+    window['star']={};
+    star.mouse=function(e,o) { if(star.stop || isNaN(star.stop)) { star.stop=0;
+        document.onmousemove=function(e) { 
+            var n=star.num;
+            var p=abPos(get('star'+n)), x=XY(e), oX=x.X-p.X, oY=x.Y-p.Y; star.num=o.id.substr(4);
+            if(oX<1 || oX>84 || oY<0 || oY>19) { star.stop=1; star.revert(); }
+            else {
+                getS('starCur'+n).width=oX+'px';
+
+                getS('starUser'+n).color='#111';
+
+                get('starUser'+n).innerHTML=Math.round(oX/84*100)+'%';
+            }
+        };
+    } };
+    star.update=function(e,o) {
+        var n=star.num, 
+        v=parseInt(get('starUser'+n).innerHTML);
+        n=o.id.substr(4); get('starCur'+n).title=v;
+    };
+    star.revert=function() { var n=star.num, v=parseInt(get('starCur'+n).title);
+        getS('starCur'+n).width=Math.round(v*84/100)+'px';
+        get('starUser'+n).innerHTML=(v>0?Math.round(v)+'%':'');
+        get('starUser'+n).style.color='#888';
+        document.onmousemove='';
+    };
+    star.num=0;
+});
+</script>
+{%endblock%}
